@@ -1,0 +1,43 @@
+name: authentik-outpost-proxy
+
+services:
+  authentik-outpost-proxy:
+    image: ghcr.io/goauthentik/proxy:2025.6.1
+    container_name: authentik-outpost-proxy
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    environment:
+      AUTHENTIK_HOST: ${AUTHENTIK_HOST}
+      AUTHENTIK_TOKEN_FILE: ${AUTHENTIK_TOKEN_FILE}
+      AUTHENTIK_HOST_INSECURE: ${AUTHENTIK_HOST_INSECURE}
+      AUTHENTIK_INSECURE: ${AUTHENTIK_INSECURE}
+      PROXY_LISTEN__0: ${PROXY_LISTEN__0}
+      PROXY_MODES__0: ${PROXY_MODES__0}
+      LOG_LEVEL: ${LOG_LEVEL}
+    networks:
+      - t3_proxy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:9000/healthz || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    secrets:
+      - authentik_outpost_token
+networks:
+  t3_proxy:
+    external: true
+
+secrets:
+  authentik_outpost_token:
+    file: ./secrets/outpost_token

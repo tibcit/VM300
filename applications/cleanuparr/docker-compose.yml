@@ -1,0 +1,37 @@
+name: cleanuparr
+
+services:
+  cleanuparr:
+    image: ghcr.io/cleanuparr/cleanuparr:latest
+    container_name: cleanuparr
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - ${CLEANUPARR_PORT}:11011
+    volumes:
+      - ./appdata:/config
+    environment:
+      TZ: ${TZ}
+      PORT: 11011
+      PUID: ${PUID}
+      PGID: ${PGID}
+      UMASK: 18
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:11011/health >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - default
+      - t3_proxy
+networks:
+  t3_proxy:
+    external: true

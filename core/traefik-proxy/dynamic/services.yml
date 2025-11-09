@@ -1,0 +1,117 @@
+http:
+  services:
+    bazarr:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://bazarr:6767
+    jellyfin:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://jellyfin:8096
+    jellyseerr:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://jellyseerr:5055
+    radarr:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://radarr:7878
+    sonarr:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://sonarr:8989
+    sabnzbd:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://sabnzbd:8080
+    transmission:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://transmission:9091
+    prowlarr:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://prowlarr:9696
+    kavita:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://kavita:5000
+    mylar3:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://mylar3:8090
+    theme-park:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://theme-park:80
+    cleanuparr:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://cleanuparr:11011
+    huntarr:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://huntarr:9705
+    n8n:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://n8n:5678
+    notifiarr:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://notifiarr:5454
+    freshrss:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://freshrss:80
+    vscode:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: https://vscode:8443
+    homepage:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://homepage:3000
+    homarr:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://homarr:7575
+    deployrr-dashboard:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://deployrr-dashboard:3000
+    authentik-outpost-proxy:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://authentik-outpost-proxy:9000
+    arcane-agent:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+        - url: http://arcane-agent:3552
+    docker-api:
+      loadBalancer:
+        passHostHeader: true
+        servers:
+          - url: http://socket-proxy:2375

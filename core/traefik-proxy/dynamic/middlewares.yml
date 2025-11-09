@@ -1,0 +1,158 @@
+http:
+  middlewares:
+    forwardauth-authentik:
+      forwardAuth:
+        address: '{{ envOrDefault "AUTHENTIK_FORWARD_AUTH_URL" "http://authentik-outpost-proxy:9000/outpost.goauthentik.io/auth/traefik" }}'
+        trustForwardHeader: true
+        authResponseHeaders:
+          - X-authentik-username
+          - X-authentik-groups
+          - X-authentik-email
+          - X-authentik-name
+          - X-authentik-uid
+          - X-authentik-jwt
+          - X-authentik-meta-jwks
+          - X-authentik-meta-outpost
+          - X-authentik-meta-provider
+          - X-authentik-meta-app
+          - X-authentik-meta-version
+
+    forwardauth-crowdsec:
+      forwardAuth:
+        address: http://traefik-bouncer:8080/api/v1/forwardAuth
+        trustForwardHeader: true
+        authResponseHeaders:
+          - X-Crowdsec-Decision
+
+    crowdsec-bouncer:
+      plugin:
+        crowdsec-bouncer:
+          crowdsecLapiUrl: '{{ env "CROWDSEC_API_URL" }}'
+          crowdsecLapiKey: '{{ env "CROWDSEC_BOUNCER_API_KEY" }}'
+          crowdsecLapiTlsInsecure: true
+          cacheSize: 1000
+          cacheDuration: 10s
+          forwardHeaders: true
+
+    ipallowlist-lan:
+      ipAllowList:
+        sourceRange:
+          - 10.0.0.0/8
+          - 172.16.0.0/12
+          - 192.168.0.0/16
+          - 172.30.0.0/24
+          - 172.31.0.0/24
+        {{- with env "VLAN10_CIDR" }}
+          - "{{ . }}"
+        {{- end }}
+        {{- with env "VLAN30_CIDR" }}
+          - "{{ . }}"
+        {{- end }}
+        {{- with env "LAN_EXTRA_SOURCE_RANGES" }}
+        {{- range $cidr := splitList "," . }}
+          - "{{ trim $cidr }}"
+        {{- end }}
+        {{- end }}
+
+    ipallowlist-socket-proxy:
+      ipAllowList:
+        sourceRange:
+          - 172.30.0.0/24
+          - 172.31.0.0/24
+
+    secure-headers:
+      headers:
+        accessControlAllowMethods:
+          - GET
+          - OPTIONS
+          - POST
+          - PUT
+          - PATCH
+          - DELETE
+        accessControlMaxAge: 100
+        sslRedirect: true
+        stsSeconds: 63072000
+        stsIncludeSubdomains: true
+        stsPreload: true
+        customFrameOptionsValue: "SAMEORIGIN"
+        contentTypeNosniff: true
+        browserXssFilter: true
+        referrerPolicy: "same-origin"
+        permissionsPolicy: "camera=(), microphone=(), geolocation=(), payment=(), usb=(), vr=()"
+        hostsProxyHeaders:
+          - "X-Forwarded-Host"
+        customResponseHeaders:
+          X-Robots-Tag: "none,noarchive,nosnippet,notranslate,noimageindex,noindex,nofollow"
+          server: ""
+        customRequestHeaders:
+          X-Forwarded-Proto: "https"
+
+    rate-limit-default:
+      rateLimit:
+        average: 100
+        burst: 50
+        period: 1s
+
+    buffering-default:
+      buffering:
+        maxRequestBodyBytes: 10485760
+        memRequestBodyBytes: 2097152
+        retryExpression: IsNetworkError() && Attempts() <= 2
+
+    compression-default:
+      compress: {}
+
+    docker-api-basicauth:
+      basicAuth:
+        usersFile: /run/secrets/docker_api_basicauth
+
+    chain-lan-sso:
+      chain:
+        middlewares:
+          - ipallowlist-lan
+          - crowdsec-bouncer
+          - rate-limit-default
+          - buffering-default
+          - forwardauth-authentik
+          - secure-headers
+          - compression-default
+
+    chain-lan-public:
+      chain:
+        middlewares:
+          - ipallowlist-lan
+          - crowdsec-bouncer
+          - rate-limit-default
+          - buffering-default
+          - secure-headers
+          - compression-default
+
+    chain-internet-sso:
+      chain:
+        middlewares:
+          - crowdsec-bouncer
+          - rate-limit-default
+          - buffering-default
+          - forwardauth-authentik
+          - secure-headers
+          - compression-default
+
+    chain-internet-public:
+      chain:
+        middlewares:
+          - crowdsec-bouncer
+          - rate-limit-default
+          - buffering-default
+          - secure-headers
+          - compression-default
+
+    chain-docker-api:
+      chain:
+        middlewares:
+          - ipallowlist-lan
+          - crowdsec-bouncer
+          - rate-limit-default
+          - buffering-default
+          - docker-api-basicauth
+          - secure-headers
+          - compression-default

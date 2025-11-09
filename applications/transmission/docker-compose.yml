@@ -1,0 +1,73 @@
+name: transmission
+
+services:
+  transmission:
+    image: lscr.io/linuxserver/transmission:latest
+    container_name: transmission
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - ${TRANSMISSION_PORT}:9091
+      - 51413:51413
+      - 51413:51413/udp
+    volumes:
+      - ./appdata:/config
+      - ${DOWNLOADSDIR}:/data/downloads
+      - ${DOWNLOADSDIR}/watch:/data/watch
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+      FILE__USER: /run/secrets/transmission_user
+      FILE__PASS: /run/secrets/transmission_pass
+    secrets:
+      - transmission_user
+      - transmission_pass
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:9091/transmission/web/ >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - default
+      - t3_proxy
+  transmission-exporter:
+    image: ghcr.io/onedr0p/transmission-exporter:latest
+    container_name: transmission-exporter
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    environment:
+      TRANSMISSION_URL: ${TRANSMISSION_RPC_URL}
+      TRANSMISSION_USERNAME: ${TRANSMISSION_USERNAME}
+      TRANSMISSION_PASSWORD: ${TRANSMISSION_PASSWORD}
+      LISTEN_ADDR: :${TRANSMISSION_EXPORTER_PORT}
+    depends_on:
+      - transmission
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:${TRANSMISSION_EXPORTER_PORT}/metrics >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - default
+      - t3_proxy
+
+secrets:
+  transmission_user:
+    file: ./secrets/transmission_user
+  transmission_pass:
+    file: ./secrets/transmission_pass
+
+networks:
+  t3_proxy:
+    external: true

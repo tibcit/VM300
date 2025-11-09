@@ -1,0 +1,42 @@
+name: n8n
+
+services:
+  n8n:
+    image: docker.n8n.io/n8nio/n8n
+    container_name: n8n
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - ${N8N_PORT}:5678
+    volumes:
+      - ./appdata:/home/node/.n8n
+    environment:
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: ${N8N_POSTGRESQL_HOST}
+      DB_POSTGRESDB_PORT: ${N8N_POSTGRESQL_PORT}
+      DB_POSTGRESDB_DATABASE: ${N8N_POSTGRESQL_DATABASE}
+      DB_POSTGRESDB_USER: ${N8N_POSTGRESQL_USERNAME}
+      DB_POSTGRESDB_PASSWORD: ${N8N_POSTGRESQL_PASSWORD}
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: 'true'
+      N8N_DIAGNOSTICS_ENABLED: 'false'
+      N8N_PERSONALIZATION_ENABLED: 'false'
+      N8N_EDITOR_BASE_URL: ${N8N_EDITOR_BASE_URL}
+      WEBHOOK_URL: ${N8N_WEBHOOK_URL}
+      N8N_METRICS: 'true'
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:5678/healthz >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - default
+      - t3_proxy
+networks:
+  t3_proxy:
+    external: true

@@ -1,0 +1,313 @@
+name: services
+
+services:
+  # --- Core services ---
+  traefik:
+    profiles:
+      - core
+    extends:
+      file: ./core/traefik-proxy/docker-compose.yml
+      service: traefik
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_TRAEFIK}
+    depends_on:
+      authentik-outpost-proxy:
+        condition: service_started
+
+  socket-proxy:
+    profiles:
+      - core
+    extends:
+      file: ./core/socket-proxy/docker-compose.yml
+      service: socket-proxy
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_SOCKET_PROXY}
+
+  crowdsec-agent:
+    profiles:
+      - core
+    extends:
+      file: ./core/crowdsec-agent/docker-compose.yml
+      service: crowdsec-agent
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_CROWDSEC_AGENT}
+
+  traefik-bouncer:
+    profiles:
+      - core
+    extends:
+      file: ./core/crowdsec-bouncer/docker-compose.yml
+      service: traefik-bouncer
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_CROWDSEC_BOUNCER}
+
+  authentik-outpost-proxy:
+    profiles:
+      - core
+    extends:
+      file: ./core/authentik-outpost-proxy/docker-compose.yml
+      service: authentik-outpost-proxy
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_AUTHENTIK_OUTPOST_PROXY}
+
+  arcane-agent:
+    profiles:
+      - core
+    extends:
+      file: ./applications/arcane/docker-compose.yml
+      service: arcane-agent
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_ARCANE_AGENT}
+
+  # --- Dashboards ---
+  dashboard-sync:
+    profiles:
+      - dashboard
+    extends:
+      file: ./applications/dashboard-sync/docker-compose.yml
+      service: dashboard-sync
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_DASHBOARD_SYNC}
+
+  deployrr-dashboard:
+    profiles:
+      - dashboard
+    extends:
+      file: ./applications/deployrr-dashboard/docker-compose.yml
+      service: deployrr-dashboard
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_DEPLOYRR_DASHBOARD}
+
+  homepage:
+    profiles:
+      - dashboard
+    extends:
+      file: ./applications/homepage/docker-compose.yml
+      service: homepage
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_HOMEPAGE}
+
+  homarr:
+    profiles:
+      - dashboard
+    extends:
+      file: ./applications/homarr/docker-compose.yml
+      service: homarr
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_HOMARR}
+
+  # --- Media stack ---
+  bazarr:
+    profiles:
+      - medias
+    extends:
+      file: ./applications/bazarr/docker-compose.yml
+      service: bazarr
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_BAZARR}
+
+  jellyfin:
+    profiles:
+      - medias
+    extends:
+      file: ./applications/jellyfin/docker-compose.yml
+      service: jellyfin
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_JELLYFIN}
+
+  jellyseerr:
+    profiles:
+      - medias
+    extends:
+      file: ./applications/jellyseerr/docker-compose.yml
+      service: jellyseerr
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_JELLYSEERR}
+
+  radarr:
+    profiles:
+      - medias
+    extends:
+      file: ./applications/radarr/docker-compose.yml
+      service: radarr
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_RADARR}
+
+  sonarr:
+    profiles:
+      - medias
+    extends:
+      file: ./applications/sonarr/docker-compose.yml
+      service: sonarr
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_SONARR}
+
+  sabnzbd:
+    profiles:
+      - medias
+    extends:
+      file: ./applications/sabnzbd/docker-compose.yml
+      service: sabnzbd
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_SABNZBD}
+
+  transmission:
+    profiles:
+      - medias
+    extends:
+      file: ./applications/transmission/docker-compose.yml
+      service: transmission
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_TRANSMISSION}
+
+  prowlarr:
+    profiles:
+      - medias
+    extends:
+      file: ./applications/prowlarr/docker-compose.yml
+      service: prowlarr
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_PROWLARR}
+
+  kavita:
+    profiles:
+      - medias
+    extends:
+      file: ./applications/kavita/docker-compose.yml
+      service: kavita
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_KAVITA}
+
+  mylar3:
+    profiles:
+      - medias
+    extends:
+      file: ./applications/mylar3/docker-compose.yml
+      service: mylar3
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_MYLAR3}
+
+  cleanuparr:
+    profiles:
+      - medias
+    extends:
+      file: ./applications/cleanuparr/docker-compose.yml
+      service: cleanuparr
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_CLEANUPARR}
+
+  huntarr:
+    profiles:
+      - medias
+    extends:
+      file: ./applications/huntarr/docker-compose.yml
+      service: huntarr
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_HUNTARR}
+
+  notifiarr:
+    profiles:
+      - medias
+    extends:
+      file: ./applications/notifiarr/docker-compose.yml
+      service: notifiarr
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_NOTIFIARR}
+
+  # --- Applications ---
+  theme-park:
+    profiles:
+      - apps
+    extends:
+      file: ./applications/theme-park/docker-compose.yml
+      service: theme-park
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_THEME_PARK}
+
+  freshrss:
+    profiles:
+      - apps
+    extends:
+      file: ./applications/freshrss/docker-compose.yml
+      service: freshrss
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_FRESHRSS}
+
+  vscode:
+    profiles:
+      - apps
+    extends:
+      file: ./applications/vscode/docker-compose.yml
+      service: vscode
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_VSCODE}
+
+  # --- Automatisation ---
+  n8n:
+    profiles:
+      - automatisation
+    extends:
+      file: ./applications/n8n/docker-compose.yml
+      service: n8n
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_N8N}
+
+  # --- Monitoring / agents ---
+  telemetrie-agent:
+    profiles:
+      - monitoring
+    extends:
+      file: ./core/telemetrie-agent/docker-compose.yml
+      service: alloy-agent
+    env_file:
+      - ${ENV_GLOBAL}
+      - ${ENV_TELEMETRIE_AGENT}
+
+networks:
+  socket_proxy:
+    external: true
+  t3_proxy:
+    external: true
+
+secrets:
+  cf_dns_api_token:
+    file: ./core/traefik-proxy/secrets/cf_dns_api_token
+  crowdsec_bouncer_api_key:
+    file: ./core/crowdsec-bouncer/secrets/crowdsec_bouncer_api_key
+  crowdsec_enroll_key:
+    file: ./core/crowdsec-agent/secrets/crowdsec_enroll_key
+  crowdsec_ca_cert:
+    file: ./core/crowdsec-agent/secrets/crowdsec_ca_cert
+  authentik_outpost_token:
+    file: ./core/authentik-outpost-proxy/secrets/outpost_token
+  transmission_user:
+    file: ./applications/transmission/secrets/transmission_user
+  transmission_pass:
+    file: ./applications/transmission/secrets/transmission_pass

@@ -1,0 +1,59 @@
+name: sabnzbd
+
+services:
+  sabnzbd:
+    image: lscr.io/linuxserver/sabnzbd:latest
+    container_name: sabnzbd
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - ${SABNZBD_PORT}:8080
+    volumes:
+      - ./appdata:/config
+      - ${DOWNLOADSDIR}:/data/downloads
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+      UMASK_SET: 2
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:8080/ >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - default
+      - t3_proxy
+  sabnzbd-exporter:
+    image: ghcr.io/onedr0p/sabnzbd-exporter:latest
+    container_name: sabnzbd-exporter
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    environment:
+      SABNZBD_URL: http://sabnzbd:8080
+      SABNZBD_API_KEY: ${SABNZBD_API_KEY}
+      PORT: ${SABNZBD_EXPORTER_PORT}
+    depends_on:
+      - sabnzbd
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:${SABNZBD_EXPORTER_PORT}/metrics >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - default
+      - t3_proxy
+
+networks:
+  t3_proxy:
+    external: true

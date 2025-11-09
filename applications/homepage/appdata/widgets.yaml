@@ -1,0 +1,5 @@
+---
+# https://gethomepage.dev/widgets/docker/
+- docker:
+    server: homepage-docker
+    fields: [status, cpu, memory]

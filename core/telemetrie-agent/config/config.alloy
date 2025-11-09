@@ -1,0 +1,357 @@
+logging {
+  level  = "info"
+  format = "logfmt"
+}
+
+locals {
+  vm       = "vm300"
+  vlan     = "30"
+  instance = coalesce(env("HOSTNAME"), hostname())
+  prom_user = trimspace(file("/run/secrets/telemetry_prometheus_user"))
+  prom_password = trimspace(file("/run/secrets/telemetry_prometheus_password"))
+  loki_user = trimspace(file("/run/secrets/telemetry_loki_user"))
+  loki_password = trimspace(file("/run/secrets/telemetry_loki_password"))
+  tempo_user = trimspace(file("/run/secrets/telemetry_tempo_user"))
+  tempo_password = trimspace(file("/run/secrets/telemetry_tempo_password"))
+  tempo_basic_auth = trimspace(file("/run/secrets/telemetry_tempo_basic_auth"))
+  pyroscope_user = trimspace(file("/run/secrets/telemetry_pyroscope_user"))
+  pyroscope_password = trimspace(file("/run/secrets/telemetry_pyroscope_password"))
+  default_labels = {
+    vm       = local.vm,
+    vlan     = local.vlan,
+    instance = local.instance,
+  }
+  blackbox_domains = [
+    env("TRAEFIK_DASHBOARD_DOMAIN"),
+    env("HOMEPAGE_DOMAIN"),
+    env("HOMARR_DOMAIN"),
+    env("DEPLOYRR_DASHBOARD_DOMAIN"),
+    env("AUTHENTIK_OUTPOST_PROXY_DOMAIN"),
+    env("N8N_DOMAIN"),
+    env("BAZARR_DOMAIN"),
+    env("RADARR_DOMAIN"),
+    env("SONARR_DOMAIN"),
+    env("SABNZBD_DOMAIN"),
+    env("TRANSMISSION_DOMAIN"),
+    env("PROWLARR_DOMAIN"),
+    env("KAVITA_DOMAIN"),
+    env("MYLAR3_DOMAIN"),
+    env("THEMEPARK_DOMAIN"),
+    env("CLEANUPARR_DOMAIN"),
+    env("HUNTARR_DOMAIN"),
+    env("NOTIFIARR_DOMAIN"),
+    env("FRESHRSS_DOMAIN"),
+    env("VSCODE_DOMAIN"),
+    env("JELLYFIN_DOMAIN"),
+    env("JELLYSEERR_DOMAIN"),
+    env("ARCANE_AGENT_DOMAIN"),
+    env("PROM_REMOTE_WRITE_DOMAIN"),
+    env("LOKI_API_DOMAIN"),
+    env("TEMPO_HTTP_DOMAIN"),
+    env("TEMPO_GRPC_DOMAIN"),
+    env("PYROSCOPE_API_DOMAIN"),
+  ]
+  blackbox_targets = [for domain in local.blackbox_domains if domain != "" { "https://" + domain }]
+}
+
+prometheus.exporter.unix "node" {
+  procfs_path = "/host/proc"
+  sysfs_path  = "/host/sys"
+  scrape_interval = "30s"
+}
+
+prometheus.exporter.cadvisor "docker" {
+  scrape_interval = "30s"
+  containerd_socket = "/var/run/docker.sock"
+  rootfs_path = "/"
+}
+
+prometheus.exporter.blackbox "https" {
+  listen_address = "127.0.0.1:9115"
+  modules = {
+    https_2xx = {
+      prober = "http"
+      http = {
+        method = "GET"
+        preferred_ip_protocol = "ip4"
+        valid_http_versions = ["HTTP/1.1", "HTTP/2"]
+      }
+    }
+  }
+}
+
+prometheus.scrape "node" {
+  targets = prometheus.exporter.unix.node.targets
+  forward_to = [prometheus.remote_write.vm100.receiver]
+  job_name = "node"
+  scrape_interval = "30s"
+  labels = local.default_labels
+}
+
+prometheus.scrape "cadvisor" {
+  targets = prometheus.exporter.cadvisor.docker.targets
+  forward_to = [prometheus.remote_write.vm100.receiver]
+  job_name = "cadvisor"
+  scrape_interval = "30s"
+  labels = local.default_labels
+}
+
+prometheus.scrape "alloy" {
+  targets = [{ __address__ = "127.0.0.1:12345" }]
+  forward_to = [prometheus.remote_write.vm100.receiver]
+  job_name = "alloy"
+  scrape_interval = "30s"
+  labels = local.default_labels
+}
+
+prometheus.scrape "blackbox" {
+  targets = [{ __address__ = prometheus.exporter.blackbox.https.listen_address }]
+  params  = {
+    module = ["https_2xx"]
+    target = local.blackbox_targets
+  }
+  forward_to = [prometheus.remote_write.vm100.receiver]
+  job_name = "blackbox"
+  scrape_interval = "1m"
+  labels = local.default_labels
+}
+
+prometheus.scrape "crowdsec_agent" {
+  targets = [{ __address__ = "crowdsec-agent:6060" }]
+  metrics_path = "/metrics"
+  forward_to = [prometheus.remote_write.vm100.receiver]
+  job_name = "crowdsec"
+  scrape_interval = "30s"
+  labels = local.default_labels
+}
+
+prometheus.scrape "bazarr_exporter" {
+  targets = [{ __address__ = "bazarr-exporter:9706" }]
+  forward_to = [prometheus.remote_write.vm100.receiver]
+  job_name = "bazarr"
+  scrape_interval = "60s"
+  labels = local.default_labels
+}
+
+prometheus.scrape "radarr_exporter" {
+  targets = [{ __address__ = "radarr-exporter:9707" }]
+  forward_to = [prometheus.remote_write.vm100.receiver]
+  job_name = "radarr"
+  scrape_interval = "60s"
+  labels = local.default_labels
+}
+
+prometheus.scrape "sonarr_exporter" {
+  targets = [{ __address__ = "sonarr-exporter:9708" }]
+  forward_to = [prometheus.remote_write.vm100.receiver]
+  job_name = "sonarr"
+  scrape_interval = "60s"
+  labels = local.default_labels
+}
+
+prometheus.scrape "prowlarr_exporter" {
+  targets = [{ __address__ = "prowlarr-exporter:9709" }]
+  forward_to = [prometheus.remote_write.vm100.receiver]
+  job_name = "prowlarr"
+  scrape_interval = "60s"
+  labels = local.default_labels
+}
+
+prometheus.scrape "sabnzbd_exporter" {
+  targets = [{ __address__ = "sabnzbd-exporter:9712" }]
+  forward_to = [prometheus.remote_write.vm100.receiver]
+  job_name = "sabnzbd"
+  scrape_interval = "60s"
+  labels = local.default_labels
+}
+
+prometheus.scrape "transmission_exporter" {
+  targets = [{ __address__ = "transmission-exporter:9713" }]
+  forward_to = [prometheus.remote_write.vm100.receiver]
+  job_name = "transmission"
+  scrape_interval = "60s"
+  labels = local.default_labels
+}
+
+prometheus.scrape "jellyfin_exporter" {
+  targets = [{ __address__ = "jellyfin-exporter:9714" }]
+  forward_to = [prometheus.remote_write.vm100.receiver]
+  job_name = "jellyfin"
+  scrape_interval = "60s"
+  labels = local.default_labels
+}
+
+prometheus.scrape "n8n" {
+  targets = [{ __address__ = "n8n:5678" }]
+  forward_to = [prometheus.remote_write.vm100.receiver]
+  job_name = "n8n"
+  scrape_interval = "30s"
+  metrics_path = "/metrics"
+  labels = local.default_labels
+}
+
+prometheus.scrape "traefik" {
+  targets = [{ __address__ = "traefik:9100" }]
+  forward_to = [prometheus.remote_write.vm100.receiver]
+  job_name = "traefik"
+  scrape_interval = "30s"
+  labels = local.default_labels
+}
+
+prometheus.remote_write "vm100" {
+  endpoint {
+    url = env("PROM_REMOTE_WRITE_URL")
+    basic_auth {
+      username = local.prom_user
+      password = local.prom_password
+    }
+  }
+}
+
+loki.source.file "traefik" {
+  targets = [{ __path__ = "/host/var/log/traefik/*.log" }]
+  labels = {
+    job = "traefik",
+    vm = local.vm,
+    vlan = local.vlan,
+    instance = local.instance,
+  }
+  forward_to = [loki.write.vm100.receiver]
+}
+
+loki.source.file "system" {
+  targets = [
+    { __path__ = "/host/var/log/syslog" },
+    { __path__ = "/host/var/log/auth.log" },
+    { __path__ = "/host/var/log/kern.log" },
+    { __path__ = "/host/var/log/messages" },
+  ]
+  labels = {
+    job = "system",
+    vm = local.vm,
+    vlan = local.vlan,
+    instance = local.instance,
+  }
+  forward_to = [loki.write.vm100.receiver]
+}
+
+loki.source.journal "systemd" {
+  path = "/host/run/log/journal"
+  labels = {
+    job = "systemd"
+    vm = local.vm,
+    vlan = local.vlan,
+    instance = local.instance,
+  }
+  forward_to = [loki.write.vm100.receiver]
+}
+
+loki.source.file "applications" {
+  targets = [
+    { __path__ = "/host/docker/applications/bazarr/appdata/logs/**/*.log", app = "bazarr" },
+    { __path__ = "/host/docker/applications/radarr/appdata/logs/**/*.log", app = "radarr" },
+    { __path__ = "/host/docker/applications/sonarr/appdata/logs/**/*.log", app = "sonarr" },
+    { __path__ = "/host/docker/applications/prowlarr/appdata/logs/**/*.log", app = "prowlarr" },
+    { __path__ = "/host/docker/applications/sabnzbd/appdata/logs/**/*.log", app = "sabnzbd" },
+    { __path__ = "/host/docker/applications/transmission/appdata/logs/**/*.log", app = "transmission" },
+    { __path__ = "/host/docker/applications/jellyfin/appdata/log/**/*.log", app = "jellyfin" },
+    { __path__ = "/host/docker/core/*/appdata/logs/**/*.log" },
+    { __path__ = "/host/docker/core/crowdsec-agent/logs/*.log", app = "crowdsec-agent" },
+    { __path__ = "/host/docker/core/crowdsec-bouncer/logs/*.log", app = "crowdsec-bouncer" },
+  ]
+  labels = {
+    job = "applications",
+    vm = local.vm,
+    vlan = local.vlan,
+    instance = local.instance,
+  }
+  forward_to = [loki.write.vm100.receiver]
+}
+
+loki.source.docker "containers" {
+  client {
+    host = "unix:///var/run/docker.sock"
+  }
+  targets = [
+    { __path__ = "/var/lib/docker/containers/*/*.log" },
+  ]
+  labels = {
+    job = "docker"
+    vm = local.vm,
+    vlan = local.vlan,
+    instance = local.instance,
+  }
+  forward_to = [loki.write.vm100.receiver]
+}
+
+loki.write "vm100" {
+  endpoint {
+    url = env("LOKI_URL")
+    basic_auth {
+      username = local.loki_user
+      password = local.loki_password
+    }
+  }
+}
+
+otelcol.receiver.otlp "local" {
+  protocols {
+    grpc {
+      endpoint = "0.0.0.0:4317"
+    }
+    http {
+      endpoint = "0.0.0.0:4318"
+    }
+  }
+  output = [otelcol.exporter.otlp.tempo.input]
+}
+
+otelcol.exporter.otlp "tempo" {
+  client {
+    endpoint = env("TEMPO_OTLP_GRPC_ENDPOINT")
+    headers = {
+      "authorization" = local.tempo_basic_auth
+    }
+    tls {
+      insecure_skip_verify = false
+    }
+  }
+}
+
+pyroscope.scrape "alloy" {
+  targets = [{ __address__ = "127.0.0.1:4040" }]
+  forward_to = [pyroscope.write.vm100.receiver]
+  scrape_interval = "1m"
+}
+
+pyroscope.ebpf "critical_services" {
+  forward_to = [pyroscope.write.vm100.receiver]
+  sample_rate = 29
+  profiling_types = ["cpu"]
+  targets = [
+    {
+      selector = "container.name == \"radarr\""
+      labels = merge(local.default_labels, {app = "radarr"})
+    },
+    {
+      selector = "container.name == \"sonarr\""
+      labels = merge(local.default_labels, {app = "sonarr"})
+    },
+    {
+      selector = "container.name == \"sabnzbd\""
+      labels = merge(local.default_labels, {app = "sabnzbd"})
+    },
+    {
+      selector = "container.name == \"transmission\""
+      labels = merge(local.default_labels, {app = "transmission"})
+    },
+  ]
+}
+
+pyroscope.write "vm100" {
+  endpoint = env("PYROSCOPE_INGEST")
+  basic_auth {
+    username = local.pyroscope_user
+    password = local.pyroscope_password
+  }
+}

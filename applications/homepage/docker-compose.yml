@@ -1,0 +1,38 @@
+name: homepage
+
+services:
+  homepage:
+    image: ghcr.io/gethomepage/homepage:latest
+    container_name: homepage
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - default
+      - socket_proxy
+      - t3_proxy
+    ports:
+      - ${HOMEPAGE_PORT}:3000
+    volumes:
+      - ./appdata:/app/config
+    environment:
+      DOCKER_HOST: ${SOCKET_PROXY_URL}
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      HOMEPAGE_ALLOWED_HOSTS: '*'
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:3000/ >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+networks:
+  socket_proxy:
+    external: true
+  t3_proxy:
+    external: true

@@ -1,0 +1,313 @@
+#!/usr/bin/env python3
+"""Sync Traefik routers into Homepage and Homarr dashboards."""
+
+import json
+import logging
+import os
+import re
+import time
+import uuid
+from collections import defaultdict
+from pathlib import Path
+from typing import Dict, List, Optional
+
+import requests
+import yaml
+
+
+TRAEFIK_API_URL = os.getenv("TRAEFIK_API_URL", "http://traefik:8080")
+HOMEPAGE_SERVICES_PATH = Path(os.getenv("HOMEPAGE_SERVICES_PATH", "/data/homepage/services.yaml"))
+HOMARR_CONFIG_PATH = Path(os.getenv("HOMARR_CONFIG_PATH", "/data/homarr/configs/default.json"))
+SYNC_INTERVAL = int(os.getenv("SYNC_INTERVAL", "120"))
+TIMEOUT = int(os.getenv("TRAEFIK_TIMEOUT", "10"))
+
+CATEGORY_MAP = [
+    ("chain-internet-sso@file", "Internet (SSO)", "internet-sso"),
+    ("chain-internet-public@file", "Internet (Public)", "internet-public"),
+    ("chain-lan-sso@file", "LAN (SSO)", "lan-sso"),
+    ("chain-lan-public@file", "LAN (Public)", "lan-public"),
+]
+
+HEADERS = {"User-Agent": "dashboard-sync/1.0"}
+
+logging.basicConfig(
+    level=os.getenv("LOG_LEVEL", "INFO"),
+    format="%(asctime)s [%(levelname)s] %(message)s",
+)
+
+
+def fetch_routers() -> List[Dict]:
+    url = f"{TRAEFIK_API_URL.rstrip('/')}/api/http/routers"
+    logging.debug("Fetching routers from %s", url)
+    response = requests.get(url, timeout=TIMEOUT, headers=HEADERS)
+    response.raise_for_status()
+    data = response.json()
+    if not isinstance(data, list):
+        raise ValueError("Unexpected routers payload")
+    return data
+
+
+def extract_host(rule: str) -> Optional[str]:
+    if not rule:
+        return None
+    matches = re.findall(r"`([^`]+)`", rule)
+    if matches:
+        return matches[0]
+    return None
+
+
+def slugify(text: str) -> str:
+    text = re.sub(r"[^a-zA-Z0-9]+", "-", text)
+    return text.strip("-").lower() or "service"
+
+
+def friendly_name(host: Optional[str], router_name: str) -> str:
+    candidate = host.split(".")[0] if host else router_name.split("@")[0]
+    candidate = candidate.replace("-", " ").replace("_", " ")
+    return candidate.title()
+
+
+def categorize_router(router: Dict) -> Optional[Dict]:
+    name = router.get("name")
+    if not name or name.startswith("api@") or name.startswith("dashboard@"):
+        return None
+
+    rule = router.get("rule", "")
+    host = extract_host(rule)
+    if not host:
+        return None
+
+    middlewares = router.get("middlewares") or []
+    middlewares = [
+        entry.get("name") if isinstance(entry, dict) else entry
+        for entry in middlewares
+    ]
+
+    category_info = None
+    for key, label, category_id in CATEGORY_MAP:
+        if key in middlewares:
+            category_info = (label, category_id)
+            break
+
+    if not category_info:
+        return None
+
+    entrypoints = router.get("entryPoints") or []
+    scheme = "https" if any("secure" in ep for ep in entrypoints) else "http"
+    url = f"{scheme}://{host}"
+    service_name = router.get("service", "unknown")
+
+    display = friendly_name(host, name)
+    icon_slug = slugify(display)
+
+    return {
+        "router_name": name,
+        "service": service_name,
+        "host": host,
+        "url": url,
+        "rule": rule,
+        "category_label": category_info[0],
+        "category_id": category_info[1],
+        "display": display,
+        "icon_slug": icon_slug,
+    }
+
+
+def build_grouped_entries(routers: List[Dict]) -> Dict[str, List[Dict]]:
+    grouped: Dict[str, List[Dict]] = {label: [] for _, label, _ in CATEGORY_MAP}
+    for router in routers:
+        entry = categorize_router(router)
+        if entry:
+            grouped[entry["category_label"]].append(entry)
+    for entries in grouped.values():
+        entries.sort(key=lambda item: item["display"])
+    return grouped
+
+
+def ensure_parent(path: Path) -> None:
+    if not path.parent.exists():
+        path.parent.mkdir(parents=True, exist_ok=True)
+
+
+def write_homepage_config(grouped: Dict[str, List[Dict]]) -> None:
+    sections: List[Dict] = []
+    for _, label, _ in CATEGORY_MAP:
+        items = grouped.get(label) or []
+        if not items:
+            continue
+        services = []
+        for item in items:
+            service_entry = {
+                "href": item["url"],
+                "description": item["service"],
+                "icon": "mdi:view-dashboard",
+                "tags": ["traefik"],
+                "siteMonitor": item["url"],
+                "integration": {
+                    "name": "traefik",
+                    "url": TRAEFIK_API_URL,
+                    "router": item["router_name"],
+                },
+            }
+            services.append({item["display"]: service_entry})
+        sections.append({label: services})
+
+    ensure_parent(HOMEPAGE_SERVICES_PATH)
+    tmp_path = HOMEPAGE_SERVICES_PATH.with_suffix(".tmp")
+    with tmp_path.open("w", encoding="utf-8") as handle:
+        handle.write("# Generated by dashboard-sync. Do not edit manually.\n")
+        yaml.safe_dump(sections, handle, sort_keys=False, allow_unicode=True)
+    tmp_path.replace(HOMEPAGE_SERVICES_PATH)
+    logging.info("Updated Homepage services at %s", HOMEPAGE_SERVICES_PATH)
+
+
+def default_homarr_settings() -> Dict:
+    return {
+        "common": {
+            "searchEngine": {"type": "google", "properties": {}},
+        },
+        "customization": {
+            "layout": {
+                "enabledLeftSidebar": False,
+                "enabledRightSidebar": False,
+                "enabledDocker": False,
+                "enabledPing": True,
+                "enabledSearchbar": True,
+            },
+            "pageTitle": "Homarr Dashboard",
+            "logoImageUrl": "",
+            "faviconUrl": "",
+            "backgroundImageUrl": "",
+            "customCss": "",
+            "colors": {
+                "primary": "blue",
+                "secondary": "cyan",
+                "shade": 7,
+            },
+            "appOpacity": 100,
+            "gridstack": {
+                "columnCountSmall": 3,
+                "columnCountMedium": 6,
+                "columnCountLarge": 10,
+            },
+        },
+        "access": {"allowGuests": False},
+    }
+
+
+def read_existing_homarr_settings() -> Dict:
+    if not HOMARR_CONFIG_PATH.exists():
+        return default_homarr_settings()
+    try:
+        content = json.loads(HOMARR_CONFIG_PATH.read_text(encoding="utf-8"))
+        return content.get("settings", default_homarr_settings())
+    except Exception:
+        logging.exception("Unable to read existing Homarr settings, using defaults")
+        return default_homarr_settings()
+
+
+def build_homarr_config(grouped: Dict[str, List[Dict]]) -> Dict:
+    settings = read_existing_homarr_settings()
+    categories_payload = []
+    apps_payload = []
+    position_counter: Dict[str, int] = defaultdict(int)
+
+    for idx, (_, label, category_id) in enumerate(CATEGORY_MAP):
+        categories_payload.append({"id": category_id, "name": label, "position": idx})
+        items = grouped.get(label) or []
+        for item in items:
+            count = position_counter[category_id]
+            position_counter[category_id] += 1
+            slug = item["icon_slug"]
+            icon_url = f"https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons@master/png/{slug}.png"
+
+            app_id = str(uuid.uuid5(uuid.NAMESPACE_URL, item["url"]))
+            apps_payload.append(
+                {
+                    "id": app_id,
+                    "name": item["display"],
+                    "url": item["url"],
+                    "behaviour": {
+                        "onClickUrl": item["url"],
+                        "externalUrl": item["url"],
+                        "isOpeningNewTab": True,
+                    },
+                    "network": {
+                        "enabledStatusChecker": True,
+                        "statusCodes": ["200", "301", "302"],
+                    },
+                    "appearance": {
+                        "iconUrl": icon_url,
+                        "appNameStatus": "normal",
+                        "positionAppName": "column",
+                        "lineClampAppName": 1,
+                    },
+                    "integration": {
+                        "type": "traefik",
+                        "properties": [
+                            {"name": "apiUrl", "value": TRAEFIK_API_URL},
+                            {"name": "router", "value": item["router_name"]},
+                        ],
+                    },
+                    "area": {
+                        "type": "category",
+                        "properties": {"id": category_id},
+                    },
+                    "shape": {
+                        "sm": {
+                            "location": {"x": 0, "y": count},
+                            "size": {"width": 1, "height": 1},
+                        },
+                        "md": {
+                            "location": {"x": count % 6, "y": count // 6},
+                            "size": {"width": 1, "height": 1},
+                        },
+                        "lg": {
+                            "location": {"x": count % 8, "y": count // 8},
+                            "size": {"width": 1, "height": 1},
+                        },
+                    },
+                }
+            )
+
+    config = {
+        "schemaVersion": 2,
+        "configProperties": {"name": "default"},
+        "categories": categories_payload,
+        "wrappers": [],
+        "apps": apps_payload,
+        "settings": settings,
+    }
+    return config
+
+
+def write_homarr_config(grouped: Dict[str, List[Dict]]) -> None:
+    config = build_homarr_config(grouped)
+    ensure_parent(HOMARR_CONFIG_PATH)
+    tmp_path = HOMARR_CONFIG_PATH.with_suffix(".tmp")
+    tmp_path.write_text(
+        json.dumps(config, indent=2, ensure_ascii=False), encoding="utf-8"
+    )
+    tmp_path.replace(HOMARR_CONFIG_PATH)
+    logging.info("Updated Homarr configuration at %s", HOMARR_CONFIG_PATH)
+
+
+def sync_once() -> None:
+    routers = fetch_routers()
+    grouped = build_grouped_entries(routers)
+    write_homepage_config(grouped)
+    write_homarr_config(grouped)
+
+
+def main() -> None:
+    logging.info("Starting dashboard sync (interval=%ss)", SYNC_INTERVAL)
+    while True:
+        try:
+            sync_once()
+        except Exception:
+            logging.exception("Failed to refresh dashboards")
+        time.sleep(SYNC_INTERVAL)
+
+
+if __name__ == "__main__":
+    main()

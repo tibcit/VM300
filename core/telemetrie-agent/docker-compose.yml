@@ -1,0 +1,77 @@
+name: telemetrie-agent
+
+services:
+  alloy-agent:
+    image: grafana/alloy:1.11.3
+    container_name: alloy-agent
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    environment:
+      ALLOY_CONFIG: /etc/alloy/config.alloy
+      HOSTNAME: ${HOSTNAME}
+      PROM_REMOTE_WRITE_URL: ${PROM_REMOTE_WRITE_URL}
+      LOKI_URL: ${LOKI_URL}
+      TEMPO_OTLP_GRPC_ENDPOINT: ${TEMPO_OTLP_GRPC_ENDPOINT}
+      PYROSCOPE_INGEST: ${PYROSCOPE_INGEST}
+    networks:
+      - t3_proxy
+    volumes:
+      - ./config:/etc/alloy:ro
+      - ./data:/var/lib/alloy
+      - /var/log:/host/var/log:ro
+      - /run/log/journal:/host/run/log/journal:ro
+      - ${DOCKER_ROOT:-/home/thibault/docker}:/host/docker:ro
+      - /var/lib/docker:/var/lib/docker:ro
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+    security_opt:
+      - no-new-privileges:true
+      - seccomp:unconfined
+    cap_add:
+      - BPF
+      - PERFMON
+    healthcheck:
+      test:
+        - CMD
+        - alloy
+        - --config.file=/etc/alloy/config.alloy
+        - -test
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    secrets:
+      - telemetry_prometheus_user
+      - telemetry_prometheus_password
+      - telemetry_loki_user
+      - telemetry_loki_password
+      - telemetry_tempo_user
+      - telemetry_tempo_password
+      - telemetry_tempo_basic_auth
+      - telemetry_pyroscope_user
+      - telemetry_pyroscope_password
+networks:
+  t3_proxy:
+    external: true
+
+secrets:
+  telemetry_prometheus_user:
+    file: ./secrets/telemetry_prometheus_user
+  telemetry_prometheus_password:
+    file: ./secrets/telemetry_prometheus_password
+  telemetry_loki_user:
+    file: ./secrets/telemetry_loki_user
+  telemetry_loki_password:
+    file: ./secrets/telemetry_loki_password
+  telemetry_tempo_user:
+    file: ./secrets/telemetry_tempo_user
+  telemetry_tempo_password:
+    file: ./secrets/telemetry_tempo_password
+  telemetry_tempo_basic_auth:
+    file: ./secrets/telemetry_tempo_basic_auth
+  telemetry_pyroscope_user:
+    file: ./secrets/telemetry_pyroscope_user
+  telemetry_pyroscope_password:
+    file: ./secrets/telemetry_pyroscope_password

@@ -1,0 +1,54 @@
+name: crowdsec-agent
+
+services:
+  crowdsec-agent:
+    image: crowdsecurity/crowdsec:latest
+    container_name: crowdsec-agent
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    environment:
+      GID: ${PGID}
+      UID: ${PUID}
+      LC_ALL: C.UTF-8
+      LANG: C.UTF-8
+      CROWDSEC_API_URL: ${CROWDSEC_API_URL}
+      CROWDSEC_CA_CERT_PATH: ${CROWDSEC_CA_CERT_PATH}
+    volumes:
+      - ./config/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
+      - ./config/config.yaml.template:/etc/crowdsec/config.yaml.template:ro
+      - ./config/local_api_credentials.yaml:/etc/crowdsec/local_api_credentials.yaml
+      - ./data:/var/lib/crowdsec/data
+      - ./hub:/var/lib/crowdsec/hub
+      - ./logs:/var/log/crowdsec
+      - ${DOCKER_ROOT}/core/traefik-proxy/logs:/var/log/traefik:ro
+    networks:
+      - t3_proxy
+    secrets:
+      - crowdsec_enroll_key
+      - crowdsec_ca_cert
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:6060/metrics >/dev/null || exit 1
+      interval: 2m
+      timeout: 10s
+      retries: 3
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        sed -e "s|__CROWDSEC_API_URL__|${CROWDSEC_API_URL}|g" \
+            -e "s|__CROWDSEC_CA_CERT_PATH__|${CROWDSEC_CA_CERT_PATH}|g" \
+            /etc/crowdsec/config.yaml.template > /etc/crowdsec/config.yaml
+        exec crowdsec -c /etc/crowdsec/config.yaml
+secrets:
+  crowdsec_enroll_key:
+    file: ./secrets/crowdsec_enroll_key
+  crowdsec_ca_cert:
+    file: ./secrets/crowdsec_ca_cert
+networks:
+  t3_proxy:
+    external: true

@@ -1,0 +1,60 @@
+name: bazarr
+
+services:
+  bazarr:
+    image: lscr.io/linuxserver/bazarr
+    container_name: bazarr
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - ${BAZARR_PORT}:6767
+    volumes:
+      - ./appdata:/config
+      - ${MOVIESDIR}:/data/media1
+      - ${TVDIR}:/data/media2
+      - ${MUSICDIR}:/data/media3
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:6767/ >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - default
+      - t3_proxy
+  bazarr-exporter:
+    image: ghcr.io/onedr0p/bazarr-exporter:latest
+    container_name: bazarr-exporter
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    environment:
+      BAZARR_URL: http://bazarr:6767
+      BAZARR_API_KEY: ${BAZARR_API_KEY}
+      PORT: ${BAZARR_EXPORTER_PORT}
+    depends_on:
+      - bazarr
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:${BAZARR_EXPORTER_PORT}/metrics >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - default
+      - t3_proxy
+
+networks:
+  t3_proxy:
+    external: true

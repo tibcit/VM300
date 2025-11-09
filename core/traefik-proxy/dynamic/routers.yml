@@ -1,0 +1,222 @@
+http:
+  routers:
+    traefik-dashboard:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "TRAEFIK_DASHBOARD_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-sso
+      service: api@internal
+      tls:
+        options: default@file
+        domains:
+        - main: '{{ env "TRAEFIK_PRIMARY_DOMAIN" }}'
+          sans:
+          - '*.{{ env "TRAEFIK_PRIMARY_DOMAIN" }}'
+    bazarr:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "BAZARR_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: bazarr
+    jellyfin:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "JELLYFIN_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: jellyfin
+    jellyseerr:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "JELLYSEERR_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: jellyseerr
+    radarr:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "RADARR_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: radarr
+    sonarr:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "SONARR_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: sonarr
+    sabnzbd:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "SABNZBD_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: sabnzbd
+    transmission:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "TRANSMISSION_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: transmission
+    prowlarr:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "PROWLARR_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: prowlarr
+    kavita:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "KAVITA_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: kavita
+    mylar3:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "MYLAR3_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: mylar3
+    theme-park:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "THEMEPARK_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: theme-park
+    cleanuparr:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "CLEANUPARR_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: cleanuparr
+    huntarr:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "HUNTARR_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: huntarr
+    n8n:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "N8N_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: n8n
+    notifiarr:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "NOTIFIARR_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: notifiarr
+    freshrss:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "FRESHRSS_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: freshrss
+    vscode:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "VSCODE_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: vscode
+    homepage:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "HOMEPAGE_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: homepage
+    homarr:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "HOMARR_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: homarr
+    deployrr-dashboard:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "DEPLOYRR_DASHBOARD_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: deployrr-dashboard
+    authentik-outpost-proxy:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "AUTHENTIK_OUTPOST_PROXY_DOMAIN" }}`)
+      middlewares:
+      - chain-internet-public
+      tls:
+        options: default@file
+      service: authentik-outpost-proxy
+    arcane-agent:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "ARCANE_AGENT_DOMAIN" }}`)
+      middlewares:
+      - chain-lan-public
+      tls:
+        options: default@file
+      service: arcane-agent
+    docker-api:
+      entryPoints:
+      - websecure
+      rule: Host(`{{ env "DOCKER_API_DOMAIN" }}`)
+      middlewares:
+      - chain-docker-api
+      tls:
+        options: default@file
+      service: docker-api

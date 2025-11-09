@@ -1,0 +1,49 @@
+name: crowdsec-bouncer
+
+services:
+  traefik-bouncer:
+    image: fbonalair/traefik-crowdsec-bouncer:latest
+    container_name: traefik-bouncer
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    networks:
+      - t3_proxy
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    environment:
+      GIN_MODE: release
+      CROWDSEC_API_URL: ${CROWDSEC_API_URL}
+      CROWDSEC_TLS_INSECURE: 'true'
+    entrypoint:
+      - /bin/sh
+      - -c
+      - 'export CROWDSEC_BOUNCER_API_KEY="$(cat /run/secrets/crowdsec_bouncer_api_key)"
+
+      exec /traefik-crowdsec-bouncer
+
+      '
+    secrets:
+      - crowdsec_bouncer_api_key
+    healthcheck:
+      test:
+        - CMD
+        - wget
+        - --spider
+        - --quiet
+        - http://127.0.0.1:8080/health
+      interval: 30s
+      timeout: 5s
+      retries: 3
+secrets:
+  crowdsec_bouncer_api_key:
+    file: ./secrets/crowdsec_bouncer_api_key
+networks:
+  t3_proxy:
+    external: true

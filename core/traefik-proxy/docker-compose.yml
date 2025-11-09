@@ -1,0 +1,69 @@
+name: traefik-proxy
+
+services:
+  traefik:
+    image: traefik:3.3
+    container_name: traefik
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    environment:
+      CROWDSEC_API_URL: ${CROWDSEC_API_URL}
+    networks:
+      - t3_proxy
+      - socket_proxy
+    ports:
+      - 443:443
+      - 127.0.0.1:8080:8080
+      - 127.0.0.1:9100:9100
+    volumes:
+      - ./static.yml:/etc/traefik/static.yml:ro
+      - ./dynamic:/etc/traefik/dynamic:ro
+      - ./acme:/acme
+      - ./logs:/var/log/traefik
+      - /etc/localtime:/etc/localtime:ro
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+    secrets:
+      - cf_dns_api_token
+      - crowdsec_bouncer_api_key
+      - docker_api_basicauth
+    entrypoint:
+      - /bin/sh
+      - -c
+      - |
+        set -e
+        export CF_DNS_API_TOKEN="$(cat /run/secrets/cf_dns_api_token)"
+        if [ -f /run/secrets/crowdsec_bouncer_api_key ]; then
+          export CROWDSEC_BOUNCER_API_KEY="$(cat /run/secrets/crowdsec_bouncer_api_key)"
+        fi
+        exec /entrypoint.sh --configFile=/etc/traefik/static.yml
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - traefik healthcheck --ping
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    labels:
+      - traefik.enable=true
+      - traefik.docker.network=t3_proxy
+secrets:
+  cf_dns_api_token:
+    file: ./secrets/cf_dns_api_token
+  crowdsec_bouncer_api_key:
+    file: ../crowdsec-bouncer/secrets/crowdsec_bouncer_api_key
+  docker_api_basicauth:
+    file: ./secrets/docker_api_basicauth
+networks:
+  socket_proxy:
+    external: true
+  t3_proxy:
+    external: true

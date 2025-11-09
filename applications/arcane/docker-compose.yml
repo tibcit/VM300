@@ -1,0 +1,36 @@
+name: arcane-agent
+
+services:
+  arcane-agent:
+    image: ghcr.io/ofkm/arcane-agent:latest
+    container_name: arcane-agent
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    environment:
+      ARCANE_AGENT_NAME: ${ARCANE_AGENT_NAME}
+      ARCANE_MANAGER_URL: ${ARCANE_MANAGER_URL}
+      ARCANE_AGENT_TOKEN: ${ARCANE_AGENT_TOKEN}
+      DOCKER_HOST: ${SOCKET_PROXY_URL}
+      TZ: ${TZ}
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - /etc/localtime:/etc/localtime:ro
+    networks:
+      - socket_proxy
+      - default
+      - t3_proxy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:3552/health || exit 1
+      interval: 1m
+      timeout: 10s
+      retries: 3
+networks:
+  socket_proxy:
+    external: true
+  t3_proxy:
+    external: true

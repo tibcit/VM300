@@ -1,0 +1,39 @@
+name: homarr
+
+services:
+  homarr:
+    image: ghcr.io/ajnart/homarr:latest
+    container_name: homarr
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - default
+      - socket_proxy
+      - t3_proxy
+    ports:
+      - ${HOMARR_PORT}:7575
+    volumes:
+      - ./appdata/configs:/app/data/configs
+      - ./appdata/icons:/app/public/icons
+      - ./appdata/data:/data
+    environment:
+      DOCKER_HOST: ${HOMARR_DOCKER_HOST}
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:7575/ >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+networks:
+  socket_proxy:
+    external: true
+  t3_proxy:
+    external: true

@@ -1,0 +1,49 @@
+common:
+  daemonize: false
+  pid_dir: /var/run/
+  log_media: file
+  log_level: info
+  log_dir: /var/log/
+  data_dir: /var/lib/crowdsec/data/
+  working_dir: .
+  plugin_dir: /usr/local/lib/crowdsec/plugins/
+
+config_paths:
+  data_dir: /var/lib/crowdsec/data/
+  config_dir: /etc/crowdsec/
+  log_dir: /var/log/crowdsec/
+  plugin_dir: /usr/local/lib/crowdsec/plugins/
+  hub_dir: /var/lib/crowdsec/hub/
+
+crowdsec_service:
+  acquisition_dir: /etc/crowdsec/acquis.yaml
+  parser_routines: 1
+  scenario_routines: 1
+  buckets_routines: 1
+  data_backend: sqlite
+  api_url: ""
+  profiles_path: /etc/crowdsec/profiles.yaml
+  simulation_path: /etc/crowdsec/simulation.yaml
+  metrics:
+    enabled: true
+    listen_addr: 0.0.0.0
+    listen_port: 6060
+
+cscli:
+  output: human
+  hub_path: /var/lib/crowdsec/hub/
+  cwhub_update_freq: 1h
+  log_level: info
+  cmd_duration: 10m
+
+api:
+  server:
+    enable: false
+  client:
+    url: __CROWDSEC_API_URL__
+    credentials_path: /etc/crowdsec/local_api_credentials.yaml
+    insecure_skip_verify: false
+    ca_cert_path: __CROWDSEC_CA_CERT_PATH__
+
+slack:
+  enabled: false

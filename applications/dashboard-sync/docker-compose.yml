@@ -1,0 +1,42 @@
+name: dashboard-sync
+
+services:
+  dashboard-sync:
+    image: python:3.12-alpine
+    container_name: dashboard-sync
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    command:
+      - /bin/sh
+      - -c
+      - 'pip install --no-cache-dir requests pyyaml opentelemetry-distro opentelemetry-exporter-otlp opentelemetry-instrumentation-requests &&
+
+      opentelemetry-bootstrap -a install &&
+
+      opentelemetry-instrument python /app/dashboard_sync.py
+
+      '
+    volumes:
+      - ./appdata/dashboard_sync.py:/app/dashboard_sync.py:ro
+      - ${DOCKER_ROOT}/applications/homepage/appdata:/data/homepage
+      - ${DOCKER_ROOT}/applications/homarr/appdata:/data/homarr
+    environment:
+      TZ: ${TZ}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTLP_HTTP_ENDPOINT}
+      OTEL_EXPORTER_OTLP_PROTOCOL: http/protobuf
+      OTEL_SERVICE_NAME: dashboard-sync
+      OTEL_RESOURCE_ATTRIBUTES: service.namespace=automation,service.instance.id=vm300-dashboard-sync
+    networks:
+      - t3_proxy
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - pgrep -f dashboard_sync.py >/dev/null || exit 1
+      interval: 1m
+      timeout: 10s
+      retries: 5
+networks:
+  t3_proxy:
+    external: true

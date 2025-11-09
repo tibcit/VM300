@@ -1,0 +1,35 @@
+name: mylar3
+
+services:
+  mylar3:
+    image: lscr.io/linuxserver/mylar3:latest
+    container_name: mylar3
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - ${MYLAR3_PORT}:8090
+    volumes:
+      - ./appdata:/config
+      - ${COMICSDIR}:/comics
+      - ${DOWNLOADSDIR}:/data/downloads
+    environment:
+      PUID: ${PUID}
+      PGID: ${PGID}
+      TZ: ${TZ}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:8090/ >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - default
+      - t3_proxy
+networks:
+  t3_proxy:
+    external: true

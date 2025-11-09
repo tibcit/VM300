@@ -1,0 +1,11 @@
+filenames:
+  - /var/log/traefik/access.log
+labels:
+  type: traefik
+  service: traefik
+---
+filenames:
+  - /var/log/traefik/traefik.log
+labels:
+  type: traefik
+  service: traefik

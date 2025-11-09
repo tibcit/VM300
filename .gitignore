@@ -1,0 +1,59 @@
+# VM300 services plane ignore rules
+# Usage: `docker compose --profile core up -d` from this directory
+
+# Environment
+.env
+!.env.example
+**/.env
+!**/.env.example
+
+# Secrets
+secrets/**
+!secrets/.gitignore
+**/secrets/**
+!**/secrets/.gitignore
+
+# Runtime state
+**/appdata/**
+!**/appdata/.gitkeep
+!**/appdata/**/.gitkeep
+**/db-data/**
+**/redis-data/**
+**/logs/**
+**/acme/**
+**/certs/**
+
+# Versioned dashboard configs
+!applications/homepage/appdata/
+applications/homepage/appdata/*
+!applications/homepage/appdata/services.yaml
+!applications/homepage/appdata/widgets.yaml
+!applications/homepage/appdata/settings.yaml
+!applications/homepage/appdata/docker.yaml
+!applications/homepage/appdata/kubernetes.yaml
+
+!applications/homarr/appdata/configs/
+applications/homarr/appdata/configs/*
+!applications/homarr/appdata/configs/default.json
+
+!applications/deployrr-dashboard/appdata/config/
+applications/deployrr-dashboard/appdata/config/*
+!applications/deployrr-dashboard/appdata/config/services.yaml
+!applications/deployrr-dashboard/appdata/config/widgets.yaml
+!applications/deployrr-dashboard/appdata/config/settings.yaml
+!applications/deployrr-dashboard/appdata/config/docker.yaml
+!applications/deployrr-dashboard/appdata/config/kubernetes.yaml
+!applications/deployrr-dashboard/appdata/config/bookmarks.yaml
+!applications/deployrr-dashboard/appdata/config/custom.css
+!applications/deployrr-dashboard/appdata/config/custom.js
+
+!applications/dashboard-sync/appdata/dashboard_sync.py
+
+# Local media path stays untracked even inside repo root
+../media/
+VM300/media/
+
+# OS artifacts
+.DS_Store
+*.log
+**/*.log

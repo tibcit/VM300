@@ -1,0 +1,65 @@
+name: sonarr
+
+services:
+  sonarr:
+    image: lscr.io/linuxserver/sonarr:develop
+    container_name: sonarr
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - ${SONARR_PORT}:8989
+    volumes:
+      - ./appdata:/config
+      - ${MOVIESDIR}:/data/media1
+      - ${TVDIR}:/data/media2
+      - ${MUSICDIR}:/data/media3
+      - ${DOWNLOADSDIR}:/data/downloads
+      - /etc/localtime:/etc/localtime:ro
+    environment:
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:8989/ping >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - default
+      - t3_proxy
+  sonarr-exporter:
+    image: ghcr.io/onedr0p/exportarr:latest
+    container_name: sonarr-exporter
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    command:
+      - sonarr
+    environment:
+      URL: http://sonarr:8989
+      APIKEY: ${SONARR_API_KEY}
+      PORT: ${SONARR_EXPORTER_PORT}
+      ENABLE_ADDITIONAL_METRICS: 'true'
+    depends_on:
+      - sonarr
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:${SONARR_EXPORTER_PORT}/metrics >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - default
+      - t3_proxy
+
+networks:
+  t3_proxy:
+    external: true

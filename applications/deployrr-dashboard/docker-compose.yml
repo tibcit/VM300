@@ -1,0 +1,40 @@
+name: deployrr-dashboard
+
+services:
+  deployrr-dashboard:
+    image: ghcr.io/gethomepage/homepage:v1.3.2
+    container_name: deployrr-dashboard
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    security_opt:
+      - no-new-privileges:true
+    networks:
+      - default
+      - socket_proxy
+      - t3_proxy
+    ports:
+      - ${DEPLOYRR_DASHBOARD_PORT}:3000
+    volumes:
+      - ./appdata/config:/app/config
+      - ./appdata/images:/app/public/images
+    environment:
+      DOCKER_HOST: ${SOCKET_PROXY_URL}
+      TZ: ${TZ}
+      PUID: ${PUID}
+      PGID: ${PGID}
+      HOMEPAGE_ALLOWED_HOSTS: '*'
+      HOMEPAGE_VAR_VM100_IP: ${VM100_IP}
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:3000/ >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+networks:
+  socket_proxy:
+    external: true
+  t3_proxy:
+    external: true

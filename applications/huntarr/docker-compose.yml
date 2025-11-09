@@ -1,0 +1,33 @@
+name: huntarr
+
+services:
+  huntarr:
+    image: huntarr/huntarr:latest
+    container_name: huntarr
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    security_opt:
+      - no-new-privileges:true
+    ports:
+      - ${HUNTARR_PORT}:9705
+    volumes:
+      - ./appdata:/config
+    environment:
+      TZ: ${TZ}
+    stop_signal: SIGTERM
+    stop_grace_period: 30s
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - curl -fsS http://127.0.0.1:9705/health >/dev/null || exit 1
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - default
+      - t3_proxy
+networks:
+  t3_proxy:
+    external: true
