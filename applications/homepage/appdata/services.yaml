@@ -1,8 +1,0 @@
----
-# Configuration inspirée de https://gethomepage.dev/configs/services/#docker
-- Docker:
-    - Conteneurs:
-        type: docker
-        server: homepage-docker
-        showStats: true
-        showList: true
