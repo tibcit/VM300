@@ -16,31 +16,10 @@
 !**/appdata/.gitkeep
 !core/traefik-proxy/appdata/**/.gitkeep
 !core/crowdsec-agent/appdata/**/.gitkeep
-# Versioned dashboard configs
-!applications/homepage/appdata/
-applications/homepage/appdata/*
-!applications/homepage/appdata/services.yaml
-!applications/homepage/appdata/widgets.yaml
-!applications/homepage/appdata/settings.yaml
-!applications/homepage/appdata/docker.yaml
-!applications/homepage/appdata/kubernetes.yaml
 
-!applications/homarr/appdata/configs/
-applications/homarr/appdata/configs/*
-!applications/homarr/appdata/configs/default.json
-
-!applications/deployrr-dashboard/appdata/config/
-applications/deployrr-dashboard/appdata/config/*
-!applications/deployrr-dashboard/appdata/config/services.yaml
-!applications/deployrr-dashboard/appdata/config/widgets.yaml
-!applications/deployrr-dashboard/appdata/config/settings.yaml
-!applications/deployrr-dashboard/appdata/config/docker.yaml
-!applications/deployrr-dashboard/appdata/config/kubernetes.yaml
-!applications/deployrr-dashboard/appdata/config/bookmarks.yaml
-!applications/deployrr-dashboard/appdata/config/custom.css
-!applications/deployrr-dashboard/appdata/config/custom.js
-
-!applications/dashboard-sync/appdata/dashboard_sync.py
+# Application configs
+applications/**/config/**
+!applications/**/config/.gitkeep
 
 # Logs
 **/logs/**
