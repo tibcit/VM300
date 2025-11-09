@@ -19,7 +19,7 @@ services:
       - t3_proxy
     volumes:
       - ./config:/etc/alloy:ro
-      - ./data:/var/lib/alloy
+      - ./appdata:/var/lib/alloy
       - /var/log:/host/var/log:ro
       - /run/log/journal:/host/run/log/journal:ro
       - ${DOCKER_ROOT:-/home/thibault/docker}:/host/docker:ro

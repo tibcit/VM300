@@ -18,9 +18,9 @@ services:
       - 127.0.0.1:8080:8080
       - 127.0.0.1:9100:9100
     volumes:
-      - ./static.yml:/etc/traefik/static.yml:ro
-      - ./dynamic:/etc/traefik/dynamic:ro
-      - ./acme:/acme
+      - ./config/static.yml:/etc/traefik/static.yml:ro
+      - ./config/dynamic:/etc/traefik/dynamic:ro
+      - ./appdata/acme:/acme
       - ./logs:/var/log/traefik
       - /etc/localtime:/etc/localtime:ro
     security_opt:

@@ -79,8 +79,9 @@ Media host path ../media/ {data,downloads,torrents,usenet}
 
 ## Arborescence utile
 
+
 core/
-traefik-proxy/ (static.yml, dynamic/_.yml, acme.json)
+traefik-proxy/ (config/static.yml, config/dynamic/*.yml, appdata/acme)
 crowdsec-agent/ (config/acquis, secrets)
 crowdsec-bouncer/
 authentik-outpost-proxy/
