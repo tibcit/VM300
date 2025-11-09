@@ -29,7 +29,7 @@
 
 ### Rôle
 
-- Plan exécution applicatif (media stack, automations, dashboards) derrière Traefik-proxy (`traefik.example.com`).
+- Plan exécution applicatif (media stack, automations, dashboards) derrière Traefik-proxy (`traefik.seite.me`).
 - Fournit flux de télémétrie (Alloy agent → VM100 remote-write, Loki push, Tempo OTLP, Pyroscope) et relaie events CrowdSec vers VM100.
 
 ### Réseaux & dépendances
