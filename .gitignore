@@ -8,21 +8,13 @@
 !**/.env.example
 
 # Secrets
-secrets/**
-!secrets/.gitignore
 **/secrets/**
-!**/secrets/.gitignore
+!**/secrets/.gitkeep
 
 # Runtime state
 **/appdata/**
 !**/appdata/.gitkeep
 !**/appdata/**/.gitkeep
-**/db-data/**
-**/redis-data/**
-**/logs/**
-**/acme/**
-**/certs/**
-
 # Versioned dashboard configs
 !applications/homepage/appdata/
 applications/homepage/appdata/*
@@ -48,6 +40,10 @@ applications/deployrr-dashboard/appdata/config/*
 !applications/deployrr-dashboard/appdata/config/custom.js
 
 !applications/dashboard-sync/appdata/dashboard_sync.py
+
+# Logs
+**/logs/**
+!**/logs/.gitkeep
 
 # Local media path stays untracked even inside repo root
 ../media/

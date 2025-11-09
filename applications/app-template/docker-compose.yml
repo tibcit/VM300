@@ -1,0 +1,43 @@
+name: app-template
+
+services:
+  app-template:
+    image: ghcr.io/example/app:latest
+    container_name: app-template
+    restart: unless-stopped
+    env_file:
+      - ./.env
+      - ../../.env
+    networks:
+      - t3_proxy
+    ports:
+      - "${APP_PORT:-12345}:12345"
+    volumes:
+      - ./appdata:/app/data
+      - ./config:/app/config:ro
+      - ./logs:/var/log/app
+    secrets:
+      - app_template_secret
+    environment:
+      TZ: ${TZ}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://127.0.0.1:12345/health || exit 1"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    security_opt:
+      - no-new-privileges:true
+    cap_drop:
+      - ALL
+    read_only: true
+    tmpfs:
+      - /tmp
+
+secrets:
+  app_template_secret:
+    file: ./secrets/app_secret
+
+networks:
+  t3_proxy:
+    external: true
