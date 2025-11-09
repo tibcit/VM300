@@ -14,7 +14,8 @@
 # Runtime state
 **/appdata/**
 !**/appdata/.gitkeep
-!**/appdata/**/.gitkeep
+!core/traefik-proxy/appdata/**/.gitkeep
+!core/crowdsec-agent/appdata/**/.gitkeep
 # Versioned dashboard configs
 !applications/homepage/appdata/
 applications/homepage/appdata/*

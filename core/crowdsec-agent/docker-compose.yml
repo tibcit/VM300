@@ -19,8 +19,8 @@ services:
       - ./config/acquis.yaml:/etc/crowdsec/acquis.yaml:ro
       - ./config/config.yaml.template:/etc/crowdsec/config.yaml.template:ro
       - ./config/local_api_credentials.yaml:/etc/crowdsec/local_api_credentials.yaml
-      - ./appdata/agent:/var/lib/crowdsec/data
-      - ./appdata/hub:/var/lib/crowdsec/hub
+      - ./appdata/agent-data:/var/lib/crowdsec/data
+      - ./appdata/hub-cache:/var/lib/crowdsec/hub
       - ./logs:/var/log/crowdsec
       - ${DOCKER_ROOT}/core/traefik-proxy/logs:/var/log/traefik:ro
     networks:
